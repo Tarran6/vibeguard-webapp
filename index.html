@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>VibeGuard — Connect Wallet</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d0d1a; --card: #16162a; --border: #2a2a4a;
+      --accent: #7c5cfc; --accent2: #4fc3f7;
+      --success: #43e97b; --danger: #f7536a;
+      --text: #e8e8f0; --muted: #8888aa; --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px 16px; gap: 20px;
+    }
+    .logo { font-size: 48px; line-height: 1; }
+    h1 {
+      font-size: 22px; font-weight: 700; text-align: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      font-size: 14px; color: var(--muted); text-align: center;
+      line-height: 1.5; max-width: 300px;
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      width: 100%; max-width: 360px;
+    }
+    .wallet-list { display: flex; flex-direction: column; gap: 10px; }
+    .wallet-btn {
+      display: flex; align-items: center; gap: 14px;
+      background: #1e1e38; border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      cursor: pointer; transition: all 0.2s;
+      width: 100%; text-align: left;
+    }
+    .wallet-btn:hover { border-color: var(--accent); background: #22224a; }
+    .wallet-btn:active { transform: scale(0.98); }
+    .wallet-icon { font-size: 28px; flex-shrink: 0; }
+    .wallet-info { display: flex; flex-direction: column; }
+    .wallet-name { font-weight: 600; font-size: 15px; color: var(--text); }
+    .wallet-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .status-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      width: 100%; max-width: 360px; text-align: center; display: none;
+    }
+    .status-icon { font-size: 40px; margin-bottom: 10px; }
+    .status-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .status-msg { font-size: 13px; color: var(--muted); word-break: break-all; }
+    .status-box.success { border-color: var(--success); }
+    .status-box.error   { border-color: var(--danger); }
+    .status-box.loading { border-color: var(--accent); }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .address-chip {
+      background: #1a1a30; border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px;
+      font-family: monospace; font-size: 13px; color: var(--accent2);
+      word-break: break-all; margin-top: 10px; display: none;
+    }
+    .back-btn {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 10px; color: var(--muted);
+      padding: 10px 20px; cursor: pointer;
+      font-size: 14px; margin-top: 12px;
+      transition: border-color 0.2s; display: none;
+    }
+    .back-btn:hover { border-color: var(--accent); color: var(--text); }
+    .note {
+      font-size: 12px; color: var(--muted); text-align: center;
+      max-width: 320px; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo">🛡️</div>
+<h1>VibeGuard Sentinel</h1>
+<p class="subtitle">Подключи кошелёк чтобы получать персональные алерты о транзакциях</p>
+
+<div class="card" id="walletList">
+  <div class="wallet-list">
+    <button class="wallet-btn" onclick="connectWallet()">
+      <span class="wallet-icon">🦊</span>
+      <span class="wallet-info">
+        <span class="wallet-name">MetaMask</span>
+        <span class="wallet-desc">Browser extension / Mobile</span>
+      </span>
+    </button>
+    <button class="wallet-btn" onclick="connectWallet()">
+      <span class="wallet-icon">🔵</span>
+      <span class="wallet-info">
+        <span class="wallet-name">Trust Wallet</span>
+        <span class="wallet-desc">Mobile WalletConnect</span>
+      </span>
+    </button>
+    <button class="wallet-btn" onclick="connectWallet()">
+      <span class="wallet-icon">💎</span>
+      <span class="wallet-info">
+        <span class="wallet-name">WalletConnect</span>
+        <span class="wallet-desc">Любой совместимый кошелёк</span>
+      </span>
+    </button>
+    <button class="wallet-btn" onclick="connectWallet()">
+      <span class="wallet-icon">⚡</span>
+      <span class="wallet-info">
+        <span class="wallet-name">Другой кошелёк</span>
+        <span class="wallet-desc">Любой injected provider</span>
+      </span>
+    </button>
+  </div>
+</div>
+
+<div class="status-box" id="statusBox">
+  <div id="statusIcon" class="status-icon"></div>
+  <div id="statusTitle" class="status-title"></div>
+  <div id="statusMsg" class="status-msg"></div>
+  <div id="addressChip" class="address-chip"></div>
+  <button class="back-btn" id="backBtn" onclick="showList()">← Назад</button>
+</div>
+
+<p class="note">🔒 Подпись не даёт доступа к средствам.<br>Бот только читает адрес для мониторинга.</p>
+
+<script>
+  const tg    = window.Telegram.WebApp;
+  const NONCE = new URLSearchParams(window.location.search).get("nonce") || "";
+
+  tg.expand();
+  tg.ready();
+
+  function showStatus(type, icon, title, msg, address) {
+    document.getElementById("walletList").style.display = "none";
+    const box = document.getElementById("statusBox");
+    box.className = "status-box " + type;
+    box.style.display = "block";
+
+    const iconEl = document.getElementById("statusIcon");
+    if (type === "loading") {
+      iconEl.innerHTML = '<div class="spinner"></div>';
+    } else {
+      iconEl.innerHTML = "";
+      iconEl.textContent = icon;
+    }
+
+    document.getElementById("statusTitle").textContent = title;
+    document.getElementById("statusMsg").textContent   = msg;
+
+    const chip = document.getElementById("addressChip");
+    chip.style.display = address ? "block" : "none";
+    if (address) chip.textContent = address;
+
+    const backBtn = document.getElementById("backBtn");
+    backBtn.style.display = (type === "error") ? "block" : "none";
+  }
+
+  function showList() {
+    document.getElementById("walletList").style.display = "block";
+    document.getElementById("statusBox").style.display  = "none";
+  }
+
+  async function connectWallet() {
+    if (!NONCE) {
+      showStatus("error", "❌", "Ошибка сессии", "Параметр nonce не найден. Нажми Connect Wallet в боте заново.", null);
+      return;
+    }
+
+    if (!window.ethereum) {
+      showStatus("error", "📱", "Кошелёк не найден", "Открой эту страницу в браузере MetaMask или Trust Wallet.", null);
+      return;
+    }
+
+    try {
+      showStatus("loading", "", "Подключаемся...", "Разреши доступ в кошельке", null);
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      const address  = accounts[0];
+
+      if (!address) {
+        showStatus("error", "❌", "Аккаунт не выбран", "Выбери аккаунт в кошельке и попробуй снова.", null);
+        return;
+      }
+
+      showStatus("loading", "", "Подписываем...", "Подтверди подпись в кошельке — газ не нужен", null);
+      const signer    = await provider.getSigner();
+      const message   = "VibeGuard verification: " + NONCE;
+      const signature = await signer.signMessage(message);
+
+      showStatus("loading", "", "Готово!", "Передаём данные боту...", null);
+      tg.sendData(JSON.stringify({ address, signature }));
+
+      showStatus("success", "✅", "Кошелёк подключён!", "Можешь закрыть это окно.", address);
+      setTimeout(() => tg.close(), 2000);
+
+    } catch (err) {
+      console.error(err);
+      const msg = (err.message || "Неизвестная ошибка").slice(0, 200);
+
+      if (err.code === 4001 || msg.includes("rejected") || msg.includes("denied")) {
+        showStatus("error", "✋", "Подпись отклонена", "Ты отклонил запрос. Нажми назад и попробуй снова.", null);
+      } else if (msg.includes("already pending")) {
+        showStatus("error", "⏳", "Запрос уже открыт", "Открой кошелёк и подтверди или отклони текущий запрос.", null);
+      } else {
+        showStatus("error", "❌", "Ошибка подключения", msg, null);
+      }
+    }
+  }
+
+  (function applyTheme() {
+    const bg = tg.themeParams && tg.themeParams.bg_color;
+    if (bg && !bg.startsWith("#0") && !bg.startsWith("#1")) {
+      const r = document.documentElement.style;
+      r.setProperty("--bg",     "#f4f4ff");
+      r.setProperty("--card",   "#ffffff");
+      r.setProperty("--border", "#d0d0e8");
+      r.setProperty("--text",   "#1a1a2e");
+      r.setProperty("--muted",  "#66668a");
+    }
+  })();
+</script>
+</body>
+</html>
